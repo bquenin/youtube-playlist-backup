@@ -390,16 +390,3 @@ export async function fetchPlaylistMetadata(playlistId) {
   };
 }
 
-/**
- * Create a snapshot of a playlist
- * @param {string} playlistId - Playlist ID
- * @returns {Promise<Object>} Snapshot object with videos
- */
-export async function createPlaylistSnapshot(playlistId) {
-  const videos = await fetchAllPlaylistItems(playlistId);
-
-  return {
-    capturedAt: Date.now(),
-    videos
-  };
-}

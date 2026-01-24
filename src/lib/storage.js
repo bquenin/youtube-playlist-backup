@@ -85,32 +85,3 @@ export async function getMonitoredPlaylists() {
   const playlists = await getPlaylists();
   return Object.values(playlists).filter(p => p.monitored);
 }
-
-
-/**
- * Export all data as JSON
- * @returns {Promise<string>} JSON string of all data
- */
-export async function exportData() {
-  const data = await getAllData();
-  return JSON.stringify(data, null, 2);
-}
-
-/**
- * Import data from JSON
- * @param {string} jsonString - JSON string to import
- * @returns {Promise<void>}
- */
-export async function importData(jsonString) {
-  const data = JSON.parse(jsonString);
-  await chrome.storage.local.clear();
-  await chrome.storage.local.set(data);
-}
-
-/**
- * Clear all data from storage
- * @returns {Promise<void>}
- */
-export async function clearAllData() {
-  await chrome.storage.local.clear();
-}

@@ -24,6 +24,14 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 /**
+ * Re-initialize on browser startup
+ */
+chrome.runtime.onStartup.addListener(async () => {
+  await setupSyncAlarm();
+  await updateBadge();
+});
+
+/**
  * Handle alarm events
  */
 chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -205,12 +213,9 @@ async function handleMessage(message) {
 
     case 'signIn':
       try {
-        console.log('signIn: starting');
         await youtubeApi.signIn();
-        console.log('signIn: success');
         return { success: true };
       } catch (error) {
-        console.log('signIn: error', error);
         return { success: false, error: error.message };
       }
 
@@ -270,7 +275,7 @@ async function handleMessage(message) {
           playlist = {
             ...message.playlistData,
             monitored: true,
-            snapshots: []
+            videos: []
           };
           await storage.savePlaylist(playlist);
         }
