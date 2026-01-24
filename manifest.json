@@ -6,8 +6,7 @@
   "permissions": [
     "identity",
     "storage",
-    "alarms",
-    "notifications"
+    "alarms"
   ],
   "host_permissions": [
     "https://www.googleapis.com/*"

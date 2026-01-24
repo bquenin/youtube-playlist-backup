@@ -82,14 +82,6 @@ async function syncAllPlaylists() {
       }
     }
 
-    // Show notification if there are unavailable videos
-    if (results.unavailable > 0) {
-      const settings = await storage.getSettings();
-      if (settings.notifyOnRemoval) {
-        await showRemovalNotification(results.unavailable);
-      }
-    }
-
     await updateBadge();
   } catch (error) {
     results.errors.push({ error: error.message });
@@ -141,27 +133,29 @@ async function syncPlaylist(playlistId) {
 }
 
 /**
- * Show browser notification for unavailable videos
- * @param {number} count - Number of unavailable videos
- */
-async function showRemovalNotification(count) {
-  const message = count === 1
-    ? '1 video became unavailable in your playlists'
-    : `${count} videos became unavailable in your playlists`;
-
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: '/icons/icon128.png',
-    title: 'YouTube Playlist Backup',
-    message
-  });
-}
-
-/**
- * Clear the badge
+ * Update badge to show dot if there are unavailable videos
  */
 async function updateBadge() {
-  chrome.action.setBadgeText({ text: '' });
+  const playlists = await storage.getMonitoredPlaylists();
+  let hasUnavailable = false;
+
+  for (const playlist of playlists) {
+    const videos = playlist.videos || [];
+    for (const v of videos) {
+      if (v.isUnavailable || v.title === 'Deleted video' || v.title === 'Private video') {
+        hasUnavailable = true;
+        break;
+      }
+    }
+    if (hasUnavailable) break;
+  }
+
+  if (hasUnavailable) {
+    chrome.action.setBadgeText({ text: '!' });
+    chrome.action.setBadgeBackgroundColor({ color: '#3484D2' });
+  } else {
+    chrome.action.setBadgeText({ text: '' });
+  }
 }
 
 /**

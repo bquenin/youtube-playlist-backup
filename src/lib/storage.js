@@ -4,8 +4,7 @@
  */
 
 const DEFAULT_SETTINGS = {
-  syncFrequency: 'daily',
-  notifyOnRemoval: true
+  syncFrequency: 'daily'
 };
 
 /**

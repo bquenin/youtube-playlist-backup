@@ -37,7 +37,6 @@ const elements = {
   // Inputs
   searchInput: document.getElementById('searchInput'),
   syncFrequency: document.getElementById('syncFrequency'),
-  notifyOnRemoval: document.getElementById('notifyOnRemoval'),
 
   // Info displays
   detailTitle: document.getElementById('detailTitle'),
@@ -76,7 +75,6 @@ function setupEventListeners() {
 
   // Settings
   elements.syncFrequency.addEventListener('change', handleSettingChange);
-  elements.notifyOnRemoval.addEventListener('change', handleSettingChange);
 
   // Tab navigation
   document.querySelectorAll('.tab').forEach(tab => {
@@ -196,7 +194,6 @@ async function loadSettings() {
 
 function applySettingsToUI() {
   elements.syncFrequency.value = settings.syncFrequency || 'daily';
-  elements.notifyOnRemoval.checked = settings.notifyOnRemoval !== false;
 }
 
 async function loadStoredPlaylists() {
@@ -458,8 +455,7 @@ async function handleSyncPlaylist() {
 
 async function handleSettingChange() {
   const newSettings = {
-    syncFrequency: elements.syncFrequency.value,
-    notifyOnRemoval: elements.notifyOnRemoval.checked
+    syncFrequency: elements.syncFrequency.value
   };
 
   const response = await sendMessage('saveSettings', { settings: newSettings });
