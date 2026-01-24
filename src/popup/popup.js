@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
   setupEventListeners();
+  await sendMessage('dismissBadge');
   await checkSetupAndAuth();
 }
 

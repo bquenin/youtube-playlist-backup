@@ -133,29 +133,56 @@ async function syncPlaylist(playlistId) {
 }
 
 /**
- * Update badge to show dot if there are unavailable videos
+ * Get all unavailable video IDs across all playlists
  */
-async function updateBadge() {
+async function getUnavailableVideoIds() {
   const playlists = await storage.getMonitoredPlaylists();
-  let hasUnavailable = false;
+  const unavailableIds = new Set();
 
   for (const playlist of playlists) {
     const videos = playlist.videos || [];
     for (const v of videos) {
       if (v.isUnavailable || v.title === 'Deleted video' || v.title === 'Private video') {
-        hasUnavailable = true;
-        break;
+        unavailableIds.add(v.videoId);
       }
     }
-    if (hasUnavailable) break;
   }
 
-  if (hasUnavailable) {
+  return unavailableIds;
+}
+
+/**
+ * Update badge to show dot only if there are NEW unseen unavailable videos
+ */
+async function updateBadge() {
+  const unavailableIds = await getUnavailableVideoIds();
+  const data = await chrome.storage.local.get('seenUnavailableIds');
+  const seenIds = new Set(data.seenUnavailableIds || []);
+
+  // Check if there are any unseen unavailable videos
+  let hasUnseen = false;
+  for (const id of unavailableIds) {
+    if (!seenIds.has(id)) {
+      hasUnseen = true;
+      break;
+    }
+  }
+
+  if (hasUnseen) {
     chrome.action.setBadgeText({ text: '!' });
     chrome.action.setBadgeBackgroundColor({ color: '#3484D2' });
   } else {
     chrome.action.setBadgeText({ text: '' });
   }
+}
+
+/**
+ * Mark all current unavailable videos as seen and clear badge
+ */
+async function dismissBadge() {
+  const unavailableIds = await getUnavailableVideoIds();
+  await chrome.storage.local.set({ seenUnavailableIds: [...unavailableIds] });
+  chrome.action.setBadgeText({ text: '' });
 }
 
 /**
@@ -268,6 +295,10 @@ async function handleMessage(message) {
 
     case 'updateBadge':
       await updateBadge();
+      return { success: true };
+
+    case 'dismissBadge':
+      await dismissBadge();
       return { success: true };
 
     default:
