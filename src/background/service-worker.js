@@ -205,9 +205,12 @@ async function handleMessage(message) {
 
     case 'signIn':
       try {
+        console.log('signIn: starting');
         await youtubeApi.signIn();
+        console.log('signIn: success');
         return { success: true };
       } catch (error) {
+        console.log('signIn: error', error);
         return { success: false, error: error.message };
       }
 

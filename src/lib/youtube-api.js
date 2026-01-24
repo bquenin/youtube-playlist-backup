@@ -1,41 +1,199 @@
 /**
  * YouTube Data API v3 wrapper
  * Handles authentication and API calls for playlist operations
- * Uses chrome.identity.getAuthToken for automatic token management
+ * Uses OAuth authorization code flow with refresh tokens
  */
 
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
+const OAUTH_SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
+const REDIRECT_URL = chrome.identity.getRedirectURL();
+const CLIENT_ID = '1073429581282-t9m5cajkaom9e5s2mpp0opcgo72ffsok.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 
 /**
- * Get OAuth access token using Chrome's identity API
- * This automatically handles token caching and refresh
- * @param {boolean} interactive - Whether to show interactive login prompt
- * @returns {Promise<string>} Access token
+ * Generate random string for PKCE
+ */
+function generateRandomString(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  let result = '';
+  const randomValues = crypto.getRandomValues(new Uint8Array(length));
+  for (let i = 0; i < length; i++) {
+    result += chars[randomValues[i] % chars.length];
+  }
+  return result;
+}
+
+/**
+ * Generate PKCE code challenge from verifier
+ */
+async function generateCodeChallenge(verifier) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * Get stored tokens
+ */
+async function getStoredTokens() {
+  const data = await chrome.storage.local.get(['accessToken', 'refreshToken', 'tokenExpiry']);
+  return data;
+}
+
+/**
+ * Store tokens
+ */
+async function storeTokens(accessToken, refreshToken, expiresIn) {
+  const data = { accessToken };
+  if (refreshToken) {
+    data.refreshToken = refreshToken;
+  }
+  if (expiresIn) {
+    data.tokenExpiry = Date.now() + (expiresIn * 1000) - 60000; // 1 min buffer
+  }
+  await chrome.storage.local.set(data);
+}
+
+/**
+ * Clear stored tokens
+ */
+async function clearTokens() {
+  await chrome.storage.local.remove(['accessToken', 'refreshToken', 'tokenExpiry']);
+}
+
+/**
+ * Refresh access token using refresh token
+ */
+async function refreshAccessToken(refreshToken) {
+  const response = await fetch(TOKEN_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to refresh token');
+  }
+
+  const tokens = await response.json();
+  await storeTokens(tokens.access_token, null, tokens.expires_in);
+  return tokens.access_token;
+}
+
+/**
+ * Get valid access token (refreshes if needed)
  */
 export async function getAuthToken(interactive = false) {
+  const stored = await getStoredTokens();
+
+  // Check if we have a valid access token
+  if (stored.accessToken && stored.tokenExpiry && Date.now() < stored.tokenExpiry) {
+    return stored.accessToken;
+  }
+
+  // Try to refresh if we have a refresh token
+  if (stored.refreshToken) {
+    try {
+      return await refreshAccessToken(stored.refreshToken);
+    } catch (error) {
+      // Refresh failed, need to re-authenticate
+      if (!interactive) {
+        throw new Error('Token expired and refresh failed');
+      }
+    }
+  }
+
+  if (!interactive) {
+    throw new Error('No valid token');
+  }
+
+  // Do interactive sign-in with PKCE
+  const codeVerifier = generateRandomString(64);
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  authUrl.searchParams.set('client_id', CLIENT_ID);
+  authUrl.searchParams.set('redirect_uri', REDIRECT_URL);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', OAUTH_SCOPES);
+  authUrl.searchParams.set('code_challenge', codeChallenge);
+  authUrl.searchParams.set('code_challenge_method', 'S256');
+  authUrl.searchParams.set('access_type', 'offline');
+  authUrl.searchParams.set('prompt', 'consent');
+
   return new Promise((resolve, reject) => {
-    chrome.identity.getAuthToken({ interactive }, (token) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
+    chrome.identity.launchWebAuthFlow(
+      { url: authUrl.toString(), interactive: true },
+      async (redirectUrl) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+
+        if (!redirectUrl) {
+          reject(new Error('No redirect URL received'));
+          return;
+        }
+
+        // Extract authorization code
+        const url = new URL(redirectUrl);
+        const code = url.searchParams.get('code');
+
+        if (!code) {
+          reject(new Error('No authorization code received'));
+          return;
+        }
+
+        // Exchange code for tokens
+        try {
+          const tokenResponse = await fetch(TOKEN_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              client_id: CLIENT_ID,
+              client_secret: CLIENT_SECRET,
+              code: code,
+              code_verifier: codeVerifier,
+              grant_type: 'authorization_code',
+              redirect_uri: REDIRECT_URL
+            })
+          });
+
+          if (!tokenResponse.ok) {
+            const error = await tokenResponse.text();
+            reject(new Error('Token exchange failed: ' + error));
+            return;
+          }
+
+          const tokens = await tokenResponse.json();
+          await storeTokens(tokens.access_token, tokens.refresh_token, tokens.expires_in);
+          resolve(tokens.access_token);
+        } catch (error) {
+          reject(error);
+        }
       }
-      if (!token) {
-        reject(new Error('No token received'));
-        return;
-      }
-      resolve(token);
-    });
+    );
   });
 }
 
 /**
  * Check if user is authenticated
- * @returns {Promise<boolean>}
  */
 export async function isAuthenticated() {
   try {
-    await getAuthToken(false);
-    return true;
+    const stored = await getStoredTokens();
+    // We're authenticated if we have a refresh token (can always get new access token)
+    return !!stored.refreshToken;
   } catch {
     return false;
   }
@@ -43,7 +201,6 @@ export async function isAuthenticated() {
 
 /**
  * Sign in user (interactive)
- * @returns {Promise<string>} Access token
  */
 export async function signIn() {
   return getAuthToken(true);
@@ -51,22 +208,17 @@ export async function signIn() {
 
 /**
  * Sign out user
- * @returns {Promise<void>}
  */
 export async function signOut() {
-  return new Promise((resolve) => {
-    chrome.identity.getAuthToken({ interactive: false }, (token) => {
-      if (token) {
-        // Revoke the token and remove from cache
-        chrome.identity.removeCachedAuthToken({ token }, () => {
-          fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`)
-            .finally(() => resolve());
-        });
-      } else {
-        resolve();
-      }
-    });
-  });
+  const stored = await getStoredTokens();
+  if (stored.accessToken) {
+    try {
+      await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${stored.accessToken}`);
+    } catch {
+      // Ignore revoke errors
+    }
+  }
+  await clearTokens();
 }
 
 /**
@@ -76,7 +228,7 @@ export async function signOut() {
  * @returns {Promise<Object>} API response
  */
 async function apiRequest(endpoint, params = {}) {
-  let token = await getStoredToken();
+  let token = await getAuthToken(false);
 
   if (!token) {
     throw new Error('Not authenticated. Please sign in.');
@@ -98,7 +250,7 @@ async function apiRequest(endpoint, params = {}) {
 
   if (response.status === 401) {
     // Token expired, clear it and throw error
-    await clearStoredToken();
+    await clearTokens();
     throw new Error('Session expired. Please sign in again.');
   }
 
