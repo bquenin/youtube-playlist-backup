@@ -268,6 +268,8 @@ function renderPlaylists() {
       v.isUnavailable || v.title === 'Deleted video' || v.title === 'Private video'
     ).length;
 
+    const lastSynced = stored?.lastSyncedAt ? formatDate(stored.lastSyncedAt) : 'Never';
+
     return `
       <div class="playlist-item" data-id="${playlist.playlistId}">
         <img class="playlist-thumbnail" src="${playlist.thumbnailUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90"%3E%3Crect fill="%23eee" width="120" height="90"/%3E%3C/svg%3E'}" alt="">
@@ -277,6 +279,7 @@ function renderPlaylists() {
             ${playlist.itemCount} videos
             ${unavailableCount > 0 ? `<span class="unavailable-indicator">${unavailableCount} unavailable</span>` : ''}
           </div>
+          <div class="playlist-meta">Synced: ${lastSynced}</div>
         </div>
       </div>
     `;
@@ -388,7 +391,8 @@ async function openPlaylistDetail(playlistId) {
     v.isUnavailable || v.title === 'Deleted video' || v.title === 'Private video'
   ).length;
 
-  elements.detailStats.textContent = `${currentVideos.length} videos${unavailableCount > 0 ? ` • ${unavailableCount} unavailable` : ''}`;
+  const lastSynced = storedPlaylist?.lastSyncedAt ? formatDate(storedPlaylist.lastSyncedAt) : 'Never';
+  elements.detailStats.textContent = `${currentVideos.length} videos${unavailableCount > 0 ? ` • ${unavailableCount} unavailable` : ''} • Synced: ${lastSynced}`;
 
   // Load saved filter preference (default to 'removed' = unavailable only)
   const filterData = await chrome.storage.local.get('detailFilter');
