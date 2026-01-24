@@ -1,113 +1,30 @@
 /**
  * YouTube Data API v3 wrapper
  * Handles authentication and API calls for playlist operations
- * Uses launchWebAuthFlow for dynamic OAuth client ID support
+ * Uses chrome.identity.getAuthToken for automatic token management
  */
 
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
-const OAUTH_SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
-const REDIRECT_URL = chrome.identity.getRedirectURL();
-
-// Embedded OAuth Client ID - users don't need to configure this
-const CLIENT_ID = '1073429581282-k8bq902m4v3h7kmm1uk70innuuhl1j01.apps.googleusercontent.com';
 
 /**
- * Get stored access token
- * @returns {Promise<string|null>} Access token or null
- */
-async function getStoredToken() {
-  const data = await chrome.storage.local.get(['accessToken', 'tokenExpiry']);
-  if (data.accessToken && data.tokenExpiry && Date.now() < data.tokenExpiry) {
-    return data.accessToken;
-  }
-  return null;
-}
-
-/**
- * Store access token
- * @param {string} token - Access token
- * @param {number} expiresIn - Seconds until expiry
- */
-async function storeToken(token, expiresIn = 3600) {
-  await chrome.storage.local.set({
-    accessToken: token,
-    tokenExpiry: Date.now() + (expiresIn * 1000) - 60000 // 1 min buffer
-  });
-}
-
-/**
- * Clear stored token
- */
-async function clearStoredToken() {
-  await chrome.storage.local.remove(['accessToken', 'tokenExpiry']);
-}
-
-/**
- * Get client ID (embedded)
- * @returns {string} Client ID
- */
-function getClientId() {
-  return CLIENT_ID;
-}
-
-/**
- * Get OAuth access token using launchWebAuthFlow
+ * Get OAuth access token using Chrome's identity API
+ * This automatically handles token caching and refresh
  * @param {boolean} interactive - Whether to show interactive login prompt
  * @returns {Promise<string>} Access token
  */
 export async function getAuthToken(interactive = false) {
-  // First check for stored valid token
-  const storedToken = await getStoredToken();
-  if (storedToken) {
-    return storedToken;
-  }
-
-  if (!interactive) {
-    throw new Error('No valid token and interactive mode disabled');
-  }
-
-  // Get client ID
-  const clientId = getClientId();
-
-  // Build OAuth URL
-  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  authUrl.searchParams.set('client_id', clientId);
-  authUrl.searchParams.set('redirect_uri', REDIRECT_URL);
-  authUrl.searchParams.set('response_type', 'token');
-  authUrl.searchParams.set('scope', OAUTH_SCOPES);
-  authUrl.searchParams.set('prompt', 'consent');
-
   return new Promise((resolve, reject) => {
-    chrome.identity.launchWebAuthFlow(
-      { url: authUrl.toString(), interactive: true },
-      (redirectUrl) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-
-        if (!redirectUrl) {
-          reject(new Error('No redirect URL received'));
-          return;
-        }
-
-        // Parse the access token from the redirect URL
-        const url = new URL(redirectUrl);
-        const hashParams = new URLSearchParams(url.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const expiresIn = parseInt(hashParams.get('expires_in') || '3600');
-
-        if (!accessToken) {
-          reject(new Error('No access token in response'));
-          return;
-        }
-
-        // Store the token
-        storeToken(accessToken, expiresIn).then(() => {
-          resolve(accessToken);
-        });
+    chrome.identity.getAuthToken({ interactive }, (token) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
       }
-    );
+      if (!token) {
+        reject(new Error('No token received'));
+        return;
+      }
+      resolve(token);
+    });
   });
 }
 
@@ -117,8 +34,8 @@ export async function getAuthToken(interactive = false) {
  */
 export async function isAuthenticated() {
   try {
-    const token = await getStoredToken();
-    return !!token;
+    await getAuthToken(false);
+    return true;
   } catch {
     return false;
   }
@@ -137,16 +54,19 @@ export async function signIn() {
  * @returns {Promise<void>}
  */
 export async function signOut() {
-  try {
-    const token = await getStoredToken();
-    if (token) {
-      // Revoke the token on Google's servers
-      await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`);
-    }
-  } catch {
-    // Ignore errors during sign out
-  }
-  await clearStoredToken();
+  return new Promise((resolve) => {
+    chrome.identity.getAuthToken({ interactive: false }, (token) => {
+      if (token) {
+        // Revoke the token and remove from cache
+        chrome.identity.removeCachedAuthToken({ token }, () => {
+          fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`)
+            .finally(() => resolve());
+        });
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 /**

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Playlist Backup",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automatically backup YouTube playlist metadata and track removed videos",
   "permissions": [
     "identity",
@@ -11,6 +11,12 @@
   "host_permissions": [
     "https://www.googleapis.com/*"
   ],
+  "oauth2": {
+    "client_id": "1073429581282-k8bq902m4v3h7kmm1uk70innuuhl1j01.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/youtube.readonly"
+    ]
+  },
   "background": {
     "service_worker": "src/background/service-worker.js",
     "type": "module"
