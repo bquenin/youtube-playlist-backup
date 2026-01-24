@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Test coverage
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build output
+dist/
+*.zip
+
+# Source icons (only final icons needed)
+icons/icon-master*.png
+icons/*.svg

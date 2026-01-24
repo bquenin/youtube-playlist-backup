@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Playlist Backup</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <h1>YouTube Playlist Backup</h1>
+      <div class="header-actions">
+        <button id="settingsBtn" class="icon-btn" title="Settings">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Login View -->
+    <div id="loginView" class="view">
+      <div class="login-content">
+        <div class="login-icon">
+          <svg viewBox="0 0 24 24" width="64" height="64">
+            <path fill="#3484D2" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </div>
+        <p>Sign in with Google to access your YouTube playlists</p>
+        <button id="signInBtn" class="btn btn-primary">Sign in with Google</button>
+      </div>
+    </div>
+
+    <!-- Main View -->
+    <div id="mainView" class="view hidden">
+      <!-- Tabs -->
+      <nav class="tabs">
+        <button class="tab active" data-tab="playlists">Playlists</button>
+        <button class="tab" data-tab="removed">Unavailable</button>
+      </nav>
+
+      <!-- Playlists Tab -->
+      <div id="playlistsTab" class="tab-content active">
+        <div class="toolbar">
+          <button id="refreshBtn" class="btn btn-secondary full-width">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+        <div id="playlistsList" class="list">
+          <div class="loading">Loading playlists...</div>
+        </div>
+      </div>
+
+      <!-- Removed Videos Tab -->
+      <div id="removedTab" class="tab-content hidden">
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="Search unavailable videos...">
+        </div>
+
+        <div id="removedList" class="list">
+          <div class="empty-state">No unavailable videos detected yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings View -->
+    <div id="settingsView" class="view hidden">
+      <div class="settings-header">
+        <button id="backBtn" class="icon-btn">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          </svg>
+        </button>
+        <h2>Settings</h2>
+      </div>
+
+      <div class="settings-content">
+        <div class="setting-group">
+          <label for="syncFrequency">Sync Frequency</label>
+          <select id="syncFrequency">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="notifyOnRemoval">
+            <span>Notify when videos become unavailable</span>
+          </label>
+        </div>
+
+        <div class="setting-group">
+          <button id="exportBtn" class="btn btn-secondary full-width">Export Data as JSON</button>
+        </div>
+
+        <div class="setting-group danger">
+          <button id="signOutBtn" class="btn btn-danger full-width">Sign Out</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playlist Detail View -->
+    <div id="playlistDetailView" class="view hidden">
+      <div class="detail-header">
+        <button id="backToMainBtn" class="icon-btn">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          </svg>
+        </button>
+        <div class="detail-info">
+          <h2 id="detailTitle">Playlist Name</h2>
+          <span id="detailStats" class="detail-stats">0 videos</span>
+        </div>
+        <button id="syncPlaylistBtn" class="icon-btn" title="Sync Now">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="detail-filter">
+        <select id="detailFilter">
+          <option value="removed">Unavailable only</option>
+          <option value="all">All videos</option>
+        </select>
+      </div>
+
+      <div id="playlistVideosList" class="list">
+        <div class="empty-state">Click sync to capture videos</div>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusBar" class="status-bar hidden">
+      <span id="statusMessage"></span>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

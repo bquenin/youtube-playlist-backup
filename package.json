@@ -1,0 +1,16 @@
+{
+  "name": "youtube-playlist-backup",
+  "version": "1.0.0",
+  "description": "Chrome extension to backup YouTube playlist metadata",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
