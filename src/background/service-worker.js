@@ -272,14 +272,6 @@ async function handleMessage(message) {
         return { success: false, error: error.message };
       }
 
-    case 'exportData':
-      try {
-        const data = await storage.exportData();
-        return { success: true, data };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
-
     case 'updateBadge':
       await updateBadge();
       return { success: true };

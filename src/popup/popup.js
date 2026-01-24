@@ -25,7 +25,6 @@ const elements = {
   backToMainBtn: document.getElementById('backToMainBtn'),
   refreshBtn: document.getElementById('refreshBtn'),
   syncPlaylistBtn: document.getElementById('syncPlaylistBtn'),
-  exportBtn: document.getElementById('exportBtn'),
 
   // Lists
   playlistsList: document.getElementById('playlistsList'),
@@ -68,7 +67,6 @@ function setupEventListeners() {
   // Actions
   elements.refreshBtn.addEventListener('click', handleRefresh);
   elements.syncPlaylistBtn.addEventListener('click', handleSyncPlaylist);
-  elements.exportBtn.addEventListener('click', handleExport);
 
   // Search
   elements.searchInput.addEventListener('input', handleSearch);
@@ -471,24 +469,6 @@ async function handleSettingChange() {
     showStatus('Settings saved');
   } else {
     showStatus('Failed to save settings');
-  }
-}
-
-async function handleExport() {
-  const response = await sendMessage('exportData');
-
-  if (response.success) {
-    // Create and download file
-    const blob = new Blob([response.data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `youtube-playlist-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showStatus('Data exported');
-  } else {
-    showStatus('Export failed');
   }
 }
 
