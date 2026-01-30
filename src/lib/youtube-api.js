@@ -1,7 +1,7 @@
 /**
  * YouTube Data API v3 wrapper
  * Handles authentication and API calls for playlist operations
- * Uses OAuth authorization code flow with refresh tokens
+ * Uses OAuth authorization code flow with PKCE and refresh tokens
  */
 
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
@@ -192,7 +192,6 @@ export async function getAuthToken(interactive = false) {
 export async function isAuthenticated() {
   try {
     const stored = await getStoredTokens();
-    // We're authenticated if we have a refresh token (can always get new access token)
     return !!stored.refreshToken;
   } catch {
     return false;
@@ -389,4 +388,3 @@ export async function fetchPlaylistMetadata(playlistId) {
     publishedAt: item.snippet.publishedAt
   };
 }
-

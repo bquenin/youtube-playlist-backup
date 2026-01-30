@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Playlist Backup",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Automatically backup YouTube playlist metadata and track removed videos",
   "permissions": [
     "identity",
