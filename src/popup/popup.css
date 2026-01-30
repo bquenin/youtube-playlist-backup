@@ -362,90 +362,6 @@ body {
   color: #3484D2;
 }
 
-/* Settings View */
-.settings-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.settings-header h2 {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.settings-content {
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.setting-group {
-  margin-bottom: 20px;
-}
-
-.setting-group label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.setting-group select {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  outline: none;
-}
-
-.setting-group select:focus {
-  border-color: #3484D2;
-}
-
-.setting-group input[type="text"] {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  outline: none;
-}
-
-.setting-group input[type="text"]:focus {
-  border-color: #3484D2;
-}
-
-.setting-help {
-  display: block;
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  font-weight: normal;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: #3484D2;
-}
-
-.setting-group.danger {
-  margin-top: 32px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e5e5;
-}
-
 /* Detail View */
 .detail-header {
   display: flex;
@@ -530,23 +446,19 @@ body {
 }
 
 /* Scrollbar */
-.list::-webkit-scrollbar,
-.settings-content::-webkit-scrollbar {
+.list::-webkit-scrollbar {
   width: 8px;
 }
 
-.list::-webkit-scrollbar-track,
-.settings-content::-webkit-scrollbar-track {
+.list::-webkit-scrollbar-track {
   background: #f5f5f5;
 }
 
-.list::-webkit-scrollbar-thumb,
-.settings-content::-webkit-scrollbar-thumb {
+.list::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 4px;
 }
 
-.list::-webkit-scrollbar-thumb:hover,
-.settings-content::-webkit-scrollbar-thumb:hover {
+.list::-webkit-scrollbar-thumb:hover {
   background: #aaa;
 }

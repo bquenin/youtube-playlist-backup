@@ -7,55 +7,21 @@ import * as storage from '../lib/storage.js';
 import * as youtubeApi from '../lib/youtube-api.js';
 import { mergeVideos, countUnavailable } from '../lib/sync-utils.js';
 
-const SYNC_ALARM_NAME = 'playlist-sync';
-
-// Frequency to minutes mapping
-const FREQUENCY_MINUTES = {
-  daily: 60 * 24,
-  weekly: 60 * 24 * 7
-};
-
 /**
  * Initialize the extension on install
  */
 chrome.runtime.onInstalled.addListener(async () => {
-  await setupSyncAlarm();
+  await syncAllPlaylists();
   await updateBadge();
 });
 
 /**
- * Re-initialize on browser startup
+ * Sync on browser startup
  */
 chrome.runtime.onStartup.addListener(async () => {
-  await setupSyncAlarm();
+  await syncAllPlaylists();
   await updateBadge();
 });
-
-/**
- * Handle alarm events
- */
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === SYNC_ALARM_NAME) {
-    await syncAllPlaylists();
-  }
-});
-
-/**
- * Set up the sync alarm based on settings
- */
-async function setupSyncAlarm() {
-  const settings = await storage.getSettings();
-  const periodInMinutes = FREQUENCY_MINUTES[settings.syncFrequency] || FREQUENCY_MINUTES.daily;
-
-  // Clear existing alarm
-  await chrome.alarms.clear(SYNC_ALARM_NAME);
-
-  // Create new alarm
-  chrome.alarms.create(SYNC_ALARM_NAME, {
-    periodInMinutes,
-    delayInMinutes: 1 // First sync after 1 minute
-  });
-}
 
 /**
  * Sync all monitored playlists
@@ -279,23 +245,6 @@ async function handleMessage(message) {
           };
           await storage.savePlaylist(playlist);
         }
-        return { success: true };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
-
-    case 'getSettings':
-      try {
-        const settings = await storage.getSettings();
-        return { success: true, settings };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
-
-    case 'saveSettings':
-      try {
-        await storage.saveSettings(message.settings);
-        await setupSyncAlarm();
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };

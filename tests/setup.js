@@ -51,13 +51,6 @@ globalThis.chrome = {
       addListener: () => {}
     }
   },
-  alarms: {
-    create: () => {},
-    clear: async () => {},
-    onAlarm: {
-      addListener: () => {}
-    }
-  },
   action: {
     setBadgeText: () => {},
     setBadgeBackgroundColor: () => {}

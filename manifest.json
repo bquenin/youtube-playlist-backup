@@ -5,8 +5,7 @@
   "description": "Automatically backup YouTube playlist metadata and track removed videos",
   "permissions": [
     "identity",
-    "storage",
-    "alarms"
+    "storage"
   ],
   "host_permissions": [
     "https://www.googleapis.com/*"

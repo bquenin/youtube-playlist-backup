@@ -6,13 +6,11 @@
 let currentPlaylistId = null;
 let userPlaylists = [];
 let storedPlaylists = {};
-let settings = {};
 
 // DOM Elements
 const views = {
   login: document.getElementById('loginView'),
   main: document.getElementById('mainView'),
-  settings: document.getElementById('settingsView'),
   playlistDetail: document.getElementById('playlistDetailView')
 };
 
@@ -20,8 +18,6 @@ const elements = {
   // Buttons
   signInBtn: document.getElementById('signInBtn'),
   signOutBtn: document.getElementById('signOutBtn'),
-  settingsBtn: document.getElementById('settingsBtn'),
-  backBtn: document.getElementById('backBtn'),
   backToMainBtn: document.getElementById('backToMainBtn'),
   refreshBtn: document.getElementById('refreshBtn'),
   syncPlaylistBtn: document.getElementById('syncPlaylistBtn'),
@@ -36,8 +32,6 @@ const elements = {
 
   // Inputs
   searchInput: document.getElementById('searchInput'),
-  syncFrequency: document.getElementById('syncFrequency'),
-
   // Info displays
   detailTitle: document.getElementById('detailTitle'),
   detailStats: document.getElementById('detailStats'),
@@ -60,8 +54,6 @@ function setupEventListeners() {
   elements.signOutBtn.addEventListener('click', handleSignOut);
 
   // Navigation
-  elements.settingsBtn.addEventListener('click', () => showView('settings'));
-  elements.backBtn.addEventListener('click', handleBackFromSettings);
   elements.backToMainBtn.addEventListener('click', () => showView('main'));
 
   // Actions
@@ -73,9 +65,6 @@ function setupEventListeners() {
 
   // Detail filter
   elements.detailFilter.addEventListener('change', handleDetailFilterChange);
-
-  // Settings
-  elements.syncFrequency.addEventListener('change', handleSettingChange);
 
   // Tab navigation
   document.querySelectorAll('.tab').forEach(tab => {
@@ -166,35 +155,10 @@ async function handleSignOut() {
   storedPlaylists = {};
 }
 
-async function handleBackFromSettings() {
-  // Check if we're authenticated to decide where to go back to
-  const response = await sendMessage('getAuthStatus');
-  if (response.authenticated) {
-    showView('main');
-  } else {
-    showView('login');
-  }
-}
-
 // Data Loading
 async function loadData() {
-  await Promise.all([
-    loadSettings(),
-    loadStoredPlaylists()
-  ]);
+  await loadStoredPlaylists();
   updateUI();
-}
-
-async function loadSettings() {
-  const response = await sendMessage('getSettings');
-  if (response.success) {
-    settings = response.settings;
-    applySettingsToUI();
-  }
-}
-
-function applySettingsToUI() {
-  elements.syncFrequency.value = settings.syncFrequency || 'daily';
 }
 
 async function loadStoredPlaylists() {
@@ -456,21 +420,6 @@ async function handleSyncPlaylist() {
   }
 
   elements.syncPlaylistBtn.disabled = false;
-}
-
-async function handleSettingChange() {
-  const newSettings = {
-    syncFrequency: elements.syncFrequency.value
-  };
-
-  const response = await sendMessage('saveSettings', { settings: newSettings });
-
-  if (response.success) {
-    settings = newSettings;
-    showStatus('Settings saved');
-  } else {
-    showStatus('Failed to save settings');
-  }
 }
 
 function handleSearch(event) {

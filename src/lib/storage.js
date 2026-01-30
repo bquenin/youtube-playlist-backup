@@ -3,37 +3,12 @@
  * Uses chrome.storage.local for persistent data storage
  */
 
-const DEFAULT_SETTINGS = {
-  syncFrequency: 'daily'
-};
-
 /**
  * Get all data from storage
  * @returns {Promise<Object>} All stored data
  */
 export async function getAllData() {
   return chrome.storage.local.get(null);
-}
-
-/**
- * Get settings from storage
- * @returns {Promise<Object>} Settings object
- */
-export async function getSettings() {
-  const data = await chrome.storage.local.get('settings');
-  return { ...DEFAULT_SETTINGS, ...data.settings };
-}
-
-/**
- * Save settings to storage
- * @param {Object} settings - Settings to save
- * @returns {Promise<void>}
- */
-export async function saveSettings(settings) {
-  const current = await getSettings();
-  await chrome.storage.local.set({
-    settings: { ...current, ...settings }
-  });
 }
 
 /**
